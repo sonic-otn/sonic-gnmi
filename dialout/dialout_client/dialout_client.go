@@ -1,7 +1,7 @@
 package telemetry_dialout
 
 import (
-	"context"
+	//	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -21,9 +21,9 @@ import (
 	"github.com/openconfig/ygot/ygot"
 	"github.com/redis/go-redis/v9"
 	"github.com/sonic-net/sonic-gnmi/common_utils"
-	spb "github.com/sonic-net/sonic-gnmi/proto"
-	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
-	sdcfg "github.com/sonic-net/sonic-gnmi/sonic_db_config"
+	//spb "github.com/sonic-net/sonic-gnmi/proto"
+	//sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
+	//sdcfg "github.com/sonic-net/sonic-gnmi/sonic_db_config"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -200,13 +200,7 @@ func (cs *clientSubscription) NewInstance(ctx context.Context) error {
 	var err error
 	if target == "OTHERS" {
 		dc, err = sdc.NewNonDbClient(cs.paths, cs.prefix)
-//<<<<<<< HEAD
-//	} else if target == "OC_YANG" {
-//		dc, err = sdc.NewTranslClient(cs.prefix, cs.paths, ctx, nil, sdc.TranslWildcardOption{})
-//	} else {
-//=======
 	} else if common_utils.IsTargetDb(target) == true {
-//>>>>>>> c5fd8c4... Extend subscription handling for multi-DB and advanced telemetry
 		dc, err = sdc.NewDbClient(cs.paths, cs.prefix)
 	} else {
 		/* For any other target or no target create new Transl Client. */
@@ -722,7 +716,7 @@ func validateFields(redisDb *redis.Client, key string) error {
 	}
 
 	// Fetch configuration fields
-	fv, err := redisDb.HGetAll(tableKey).Result()
+	fv, err := redisDb.HGetAll(context.Background(), tableKey).Result()
 	if err != nil {
 		return fmt.Errorf("redis HGetAll failed for %s with error %v", tableKey, err)
 	}
@@ -831,13 +825,9 @@ func DialOutRun(ctx context.Context, ccfg *ClientConfig) error {
 	log.V(2).Infof("Psubscribe succeeded: %v", subscr)
 
 	var dbkeys []string
-//<<<<<<< HEAD
-//	dbkey_prefix := "TELEMETRY_CLIENT" + separator
-//	dbkeys, err = redisDb.Keys(context.Background(), dbkey_prefix+"*").Result()
-//=======
 	dbkeyPrefix := "TELEMETRY_CLIENT" + separator
-	dbkeys, err = redisDb.Keys(dbkeyPrefix + "*").Result()
-//>>>>>>> 240af7b... Latest changes
+	dbkeys, err = redisDb.Keys(context.Background(), dbkeyPrefix+"*").Result()
+	
 	if err != nil {
 		log.V(2).Infof("redis Keys failed for %v with err %v", pattern, err)
 		return err
@@ -866,7 +856,7 @@ func DialOutRun(ctx context.Context, ccfg *ClientConfig) error {
 			return err
 		}
 
-		lastConfig, err := redisDb.HGetAll(tableKey).Result()
+		lastConfig, err := redisDb.HGetAll(context.Background(), tableKey).Result()
 		if err != nil {
 			log.Errorf("Failed to get last configuration for key %v: %v", dbkey, err)
 			continue
@@ -919,7 +909,7 @@ func DialOutRun(ctx context.Context, ccfg *ClientConfig) error {
 			}
 
 			// Fetch the new configuration
-			newConfig, err := redisDb.HGetAll(tableKey).Result()
+			newConfig, err := redisDb.HGetAll(context.Background(), tableKey).Result()
 			if err != nil {
 				log.Errorf("Failed to get new configuration for key %v: %v", dbkey, err)
 				continue
