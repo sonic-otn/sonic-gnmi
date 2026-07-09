@@ -6,6 +6,10 @@ export PATH := $(PATH):$(GOPATH)/bin
 INSTALL := /usr/bin/install
 DBDIR := /var/run/redis/sonic-db/
 GO ?= /usr/local/go/bin/go
+TRANSLIB_LDFLAGS ?=
+ifeq ($(strip $(ENABLE_TRANSLIB_ROLLBACK)),y)
+TRANSLIB_LDFLAGS += -X github.com/Azure/sonic-mgmt-common/translib.ENABLE_TRANSLIB_ROLLBACK=true
+endif
 TOPDIR := $(abspath .)
 MGMT_COMMON_DIR := $(TOPDIR)/../sonic-mgmt-common
 BUILD_BASE := build
@@ -96,7 +100,7 @@ sonic-gnmi: $(GO_DEPS) $(FORMAT_CHECK)
 
 	make swsscommon_wrap
 ifeq ($(CROSS_BUILD_ENVIRON),y)
-	$(GO) build -o ${GOBIN}/telemetry -mod=vendor $(BLD_FLAGS) github.com/sonic-net/sonic-gnmi/telemetry
+	$(GO) build -o ${GOBIN}/telemetry -mod=vendor $(BLD_FLAGS) $(if $(TRANSLIB_LDFLAGS),-ldflags "$(TRANSLIB_LDFLAGS)") github.com/sonic-net/sonic-gnmi/telemetry
 ifneq ($(ENABLE_DIALOUT_VALUE),0)
 	$(GO) build -o ${GOBIN}/dialout_client_cli -mod=vendor $(BLD_FLAGS) github.com/sonic-net/sonic-gnmi/dialout/dialout_client_cli
 	$(GO) build -o ${GOBIN}/dialout_server_cli -mod=vendor $(BLD_FLAGS) github.com/sonic-net/sonic-gnmi/dialout/dialout_server_cli
@@ -114,7 +118,7 @@ endif
 	$(GO) build -o ${GOBIN}/gnoi_client -mod=vendor github.com/sonic-net/sonic-gnmi/gnoi_client
 	$(GO) build -o ${GOBIN}/gnmi_dump -mod=vendor github.com/sonic-net/sonic-gnmi/gnmi_dump
 else
-	$(GO) install -mod=vendor $(BLD_FLAGS) github.com/sonic-net/sonic-gnmi/telemetry
+	$(GO) install -mod=vendor $(BLD_FLAGS) $(if $(TRANSLIB_LDFLAGS),-ldflags "$(TRANSLIB_LDFLAGS)") github.com/sonic-net/sonic-gnmi/telemetry
 ifneq ($(ENABLE_DIALOUT_VALUE),0)
 	$(GO) install -mod=vendor $(BLD_FLAGS) github.com/sonic-net/sonic-gnmi/dialout/dialout_client_cli
 	$(GO) install -mod=vendor $(BLD_FLAGS) github.com/sonic-net/sonic-gnmi/dialout/dialout_server_cli
